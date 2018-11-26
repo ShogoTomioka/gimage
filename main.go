@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"image"
 	"image/color"
 	"image/png"
@@ -32,35 +33,56 @@ func Binarization(imgObject image.Image) *image.Gray {
 	return binary
 }
 
-type Picture struct {
-	file    *os.File
-	Rec     image.Rectangle
-	ImgGray *image.Gray
+func GrayDiff(g1 *image.Gray, g2 *image.Gray) {
+	//本来は画像サイズが違うことを考慮しないといけない
+
 }
 
 func main() {
 
-	filePath_A := "./pictures/picture_A.png"
-	//filePAth_B := "./pictures/picture_B.png"
+	var (
+		filePath_A string
+		filePath_B string
+		outPath    string
+	)
+	flag.StringVar(&filePath_A, "i", "", "input file name 1")
+	flag.StringVar(&filePath_B, "f", "", "input file name 2")
+	flag.StringVar(&outPath, "o", "outfile.png", "output file name")
+	flag.Parse()
 
 	//画像ファイルのオープン
-	file, _ := os.Open(filePath_A)
-	defer file.Close()
+	file_A, _ := os.Open(filePath_A)
+	defer file_A.Close()
+	file_B, _ := os.Open(filePath_B)
+	defer file_B.Close()
 
 	//ファイルをデコードしてImageオブジェクトを作成
-	imageObj, _, err := image.Decode(file)
+	imageObj, _, err := image.Decode(file_A)
 	if err != nil {
 		panic(err)
 	}
 
-	//	srcBounds := imageObj.Bounds()
+	imageObjB, _, err := image.Decode(file_B)
+	if err != nil {
+		panic(err)
+	}
 
-	// 出力用イメージ
+	//ここで画像のサイズが違う可能性を考慮する
+
 	grayImage := Binarization(imageObj)
+	grayImageB := Binarization(imageObjB)
 
 	// 書き出し用ファイル準備
 	outfile, _ := os.Create("out.png")
 	defer outfile.Close()
 	// 書き出し
 	png.Encode(outfile, grayImage)
+
+	outfileB, _ := os.Create("outB.png")
+	defer outfileB.Close()
+	// 書き出し
+	png.Encode(outfileB, grayImageB)
+
+	GrayDiff(grayImage, grayImageB)
+
 }
