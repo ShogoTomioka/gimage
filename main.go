@@ -8,6 +8,20 @@ import (
 	"os"
 )
 
+func GenerateImage(filename string) image.Image {
+
+	//画像ファイルのオープン
+	file, _ := os.Open(filename)
+	defer file.Close()
+
+	//ファイルをデコードしてImageオブジェクトを作成
+	imageObj, _, err := image.Decode(file)
+	if err != nil {
+		panic(err)
+	}
+	return imageObj
+}
+
 // 二値化した画像のデータを返す関数
 func Binarization(imgObject image.Image) *image.Gray {
 
@@ -33,9 +47,20 @@ func Binarization(imgObject image.Image) *image.Gray {
 	return binary
 }
 
-func GrayDiff(g1 *image.Gray, g2 *image.Gray) {
-	//本来は画像サイズが違うことを考慮しないといけない
+func GrayDiff(g1 *image.Gray, g2 *image.Gray) *image.Gray {
+	//本来は画像サイズが違うことを考慮しないといけないが今回は同じサイズの画像に限るので(~_~;)
 
+	diffBinary := image.NewGray(g1.Rect)
+	gray := color.Gray{Y: 255}
+
+	for v := g1.Rect.Min.Y; v < g1.Rect.Max.Y; v++ {
+		for h := g1.Rect.Min.X; h < g1.Rect.Max.X; h++ {
+			if g1.At(h, v) == g2.At(h, v) {
+				diffBinary.Set(h, v, gray)
+			}
+		}
+	}
+	return diffBinary
 }
 
 func main() {
@@ -45,44 +70,32 @@ func main() {
 		filePath_B string
 		outPath    string
 	)
-	flag.StringVar(&filePath_A, "i", "", "input file name 1")
-	flag.StringVar(&filePath_B, "f", "", "input file name 2")
+
+	flag.StringVar(&filePath_A, "i", "pictures/picture_A.png", "input file name 1")
+	flag.StringVar(&filePath_B, "f", "pictures/picture_B.png", "input file name 2")
 	flag.StringVar(&outPath, "o", "outfile.png", "output file name")
 	flag.Parse()
 
-	//画像ファイルのオープン
-	file_A, _ := os.Open(filePath_A)
-	defer file_A.Close()
-	file_B, _ := os.Open(filePath_B)
-	defer file_B.Close()
+	imageA := GenerateImage(filePath_A)
+	imageB := GenerateImage(filePath_B)
 
-	//ファイルをデコードしてImageオブジェクトを作成
-	imageObj, _, err := image.Decode(file_A)
-	if err != nil {
-		panic(err)
-	}
+	grayImage := Binarization(imageA)
+	grayImageB := Binarization(imageB)
+	/*
+		// 書き出し用ファイル準備
+		outfile, _ := os.Create("out.png")
+		defer outfile.Close()
+		// 書き出し
+		png.Encode(outfile, grayImage)
 
-	imageObjB, _, err := image.Decode(file_B)
-	if err != nil {
-		panic(err)
-	}
+		outfileB, _ := os.Create("outB.png")
+		defer outfileB.Close()
+	*/
+	// 差分を求めて書き出し
+	diffImage := GrayDiff(grayImage, grayImageB)
 
-	//ここで画像のサイズが違う可能性を考慮する
-
-	grayImage := Binarization(imageObj)
-	grayImageB := Binarization(imageObjB)
-
-	// 書き出し用ファイル準備
-	outfile, _ := os.Create("out.png")
+	outfile, _ := os.Create(outPath)
 	defer outfile.Close()
-	// 書き出し
-	png.Encode(outfile, grayImage)
-
-	outfileB, _ := os.Create("outB.png")
-	defer outfileB.Close()
-	// 書き出し
-	png.Encode(outfileB, grayImageB)
-
-	GrayDiff(grayImage, grayImageB)
+	png.Encode(outfile, diffImage)
 
 }
