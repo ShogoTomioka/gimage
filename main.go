@@ -6,12 +6,14 @@ import (
 	"image"
 	"image/color"
 	"image/draw"
+	"image/jpeg"
 	"image/png"
 	"os"
 )
 
 const (
-	DIVISION = 10
+	DIVISION  = 10
+	THREAHOLD = 10
 )
 
 func GenerateImage(filename string) image.Image {
@@ -28,10 +30,11 @@ func GenerateImage(filename string) image.Image {
 	return imageObj
 }
 
-func GenerateFileter(g *image.Gray) *image.RGBA {
+//GenerateFilter は二値画像の明るい部分に枠線を描く
+func GenerateFilter(g *image.Gray) *image.RGBA {
 
 	//間違っている部分を示すためのフィルターImage
-	fileter := image.NewRGBA(g.Rect)
+	filter := image.NewRGBA(g.Rect)
 	scanList := ScanImage(g)
 
 	size := g.Rect.Size()
@@ -43,17 +46,20 @@ func GenerateFileter(g *image.Gray) *image.RGBA {
 	point := image.Point{X: width, Y: height}
 	rec := image.Rectangle{Min: min, Max: point}
 
-	for i := 0; i > DIVISION; i++ {
+	fmt.Println(rec)
+	for i := 0; i < DIVISION; i++ {
 		for t := 0; t < DIVISION; t++ {
 			if scanList[t][i] == true {
-
+				p := image.Point{X: width * t, Y: height * i}
+				redRec := rec.Add(p)
+				fmt.Println(redRec)
 				//scanListでTrueになっている部分のRectangleに枠線を描写
-				fileter = DrawBound(image)
+				//	filter.Set(i, t, red)
+				filter = DrawBound(filter, redRec)
 			}
 		}
 	}
-
-	return fileter
+	return filter
 }
 
 //精査された二値データから明るいか(True)、暗いか(True)の情報が入った配列を作成
@@ -67,20 +73,19 @@ func ScanImage(g *image.Gray) [][]bool {
 	width := size.X / DIVISION
 	height := size.Y / DIVISION
 
-	for v := 0; v < 10; v++ {
+	for v := 0; v < DIVISION; v++ {
 		var list []bool
-		for h := 0; h < 10; h++ {
+		for h := 0; h < DIVISION; h++ {
 			point = image.Point{X: width * h, Y: height * v}
 			t = WatchArea(g, width, height, point)
 			list = append(list, t)
 		}
 		lists = append(lists, list)
 	}
-	fmt.Println(lists)
 	return lists
 }
 
-//指定された範囲内の明るさが大きければTrueを、そうでなければFalseを返す
+//WatchArea は、指定された範囲内の明るさが大きければTrueを、そうでなければFalseを返す
 func WatchArea(g *image.Gray, width int, height int, p image.Point) bool {
 
 	x := p.X
@@ -96,42 +101,28 @@ func WatchArea(g *image.Gray, width int, height int, p image.Point) bool {
 			}
 		}
 	}
-	if count > (width*height)/10 {
+	if count > (width*height)/THREAHOLD {
 		return true
 	} else {
 		return false
 	}
 }
 
+//DrawBound は指定されたRectangleの範囲に赤い枠線を描く
 func DrawBound(img *image.RGBA, rect image.Rectangle) *image.RGBA {
-
 	//間違っている部分を囲う枠線の色
 	red := color.RGBA{255, 0, 0, 0}
 	//rectの範囲に枠線を書く
 	// 上下の枠
-	for h := 0; h < rect.Max.X; h++ {
-		img.Set(h, 0, red)
+	for h := rect.Min.X; h < rect.Max.X; h++ {
+		img.Set(h, rect.Min.Y, red)
 		img.Set(h, rect.Max.Y-1, red)
 	}
 	// 左右の枠
-	for v := 0; v < rect.Max.Y; v++ {
-		img.Set(0, v, red)
+	for v := rect.Min.Y; v < rect.Max.Y; v++ {
+		img.Set(rect.Min.X, v, red)
 		img.Set(rect.Max.X-1, v, red)
-	}
-	return img
 
-}
-
-// 枠線を描く
-func drawBounds(img *image.RGBA, col color.Color, rect image.Rectangle) *image.RGBA {
-
-	for h := 0; h < rect.Max.X; h++ {
-		img.Set(h, 0, col)
-		img.Set(h, rect.Max.Y-1, col)
-	}
-	for v := 0; v < rect.Max.Y; v++ {
-		img.Set(0, v, col)
-		img.Set(rect.Max.X-1, v, col)
 	}
 	return img
 }
@@ -159,10 +150,6 @@ func main() {
 	// 差分を求めて書き出し
 	diffImage := GrayDiff(grayImage, grayImageB)
 
-	diffImage = ErosionImage(diffImage)
-
-	diffImage = DilationImage(diffImage)
-
 	for i := 0; i < 5; i++ {
 		diffImage = ErosionImage(diffImage)
 	}
@@ -170,23 +157,28 @@ func main() {
 		diffImage = DilationImage(diffImage)
 	}
 
-	_ = GenerateFileter(diffImage)
+	filter := GenerateFilter(diffImage)
+	DrawBound(filter, filter.Bounds())
 
 	//出力用のイメージを用意
 	outRect := image.Rectangle{image.Pt(0, 0), imageA.Bounds().Size()}
 	out := image.NewRGBA(outRect)
 
-	//元画像に対して作成したフィルターを上書き
-	RectA := image.Rectangle{image.Pt(0, 0), imageA.Bounds().Size()}
-	draw.Draw(out, RectA, imageA, image.Pt(0, 0), draw.Src)
-
 	//フィルターを元画像に対して上書きする
-	RectB := image.Rectangle{image.Pt(0, 0), imageB.Bounds().Size()}
-	draw.Draw(out, RectB, imageB, image.Pt(0, 0), draw.Over)
+	RectB := image.Rectangle{image.Pt(0, 0), imageA.Bounds().Size()}
+	draw.Draw(out, RectB, imageA, image.Pt(0, 0), draw.Over)
 
 	outfile, _ := os.Create(OUT_PATH)
 	defer outfile.Close()
-	//png.Encode(outfile, diffImage)
-	png.Encode(outfile, out)
+	//	png.Encode(outfile, diffImage)
+	png.Encode(outfile, diffImage)
 
+	// 出力用ファイル作成(エラー処理は略)
+	file, _ := os.Create("sample.jpeg")
+	defer file.Close()
+
+	// JPEGで出力(100%品質)
+	if err := jpeg.Encode(file, filter, &jpeg.Options{100}); err != nil {
+		panic(err)
+	}
 }

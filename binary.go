@@ -1,6 +1,6 @@
 /*
 　画像データを二値化する、もしくは二値化したデータに対する処理をまとめる
-
+　二値化する際は、Grayスケールの値が128より大きいものを255(白)、128以下を0(黒)にしている
 
 */
 
@@ -34,20 +34,16 @@ func Binarization(imgObject image.Image) *image.Gray {
 	return binary
 }
 
-// 二値化ではなくグレースケールで比較
 func NoBinarization(imgObject image.Image) *image.Gray {
 
-	// imageデータをグレースケール化したものを作成
 	rec := imgObject.Bounds()
-
 	binary := image.NewGray(rec)
 
-	// グレーイメージに対して二値化処理
+	// グレー化したものSetして返却
 	for v := rec.Min.Y; v < rec.Max.Y; v++ {
 		for h := rec.Min.X; h < rec.Max.X; h++ {
 			c := color.GrayModel.Convert(imgObject.At(h, v))
 			gray, _ := c.(color.Gray)
-
 			binary.Set(h, v, gray)
 		}
 	}
