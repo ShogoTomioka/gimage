@@ -5,8 +5,13 @@ import (
 	"fmt"
 	"image"
 	"image/color"
+	"image/draw"
 	"image/png"
 	"os"
+)
+
+const (
+	DIVISION = 10
 )
 
 func GenerateImage(filename string) image.Image {
@@ -25,8 +30,28 @@ func GenerateImage(filename string) image.Image {
 
 func GenerateFileter(g *image.Gray) *image.RGBA {
 
+	//間違っている部分を示すためのフィルターImage
 	fileter := image.NewRGBA(g.Rect)
-	_ = ScanImage(g)
+	scanList := ScanImage(g)
+
+	size := g.Rect.Size()
+	width := size.X / DIVISION
+	height := size.Y / DIVISION
+
+	//フィルターの枠線のRectangleを作成、あとでFor分でこのRectangleをずらしていく
+	min := image.Point{X: 0, Y: 0}
+	point := image.Point{X: width, Y: height}
+	rec := image.Rectangle{Min: min, Max: point}
+
+	for i := 0; i > DIVISION; i++ {
+		for t := 0; t < DIVISION; t++ {
+			if scanList[t][i] == true {
+
+				//scanListでTrueになっている部分のRectangleに枠線を描写
+				fileter = DrawBound(image)
+			}
+		}
+	}
 
 	return fileter
 }
@@ -36,9 +61,11 @@ func ScanImage(g *image.Gray) [][]bool {
 	var lists [][]bool
 	var t bool
 	var point image.Point
+
 	// 全体を100分割する
-	width := (g.Rect.Max.X - g.Rect.Min.X) / 10
-	height := (g.Rect.Max.Y - g.Rect.Min.Y) / 10
+	size := g.Rect.Size()
+	width := size.X / DIVISION
+	height := size.Y / DIVISION
 
 	for v := 0; v < 10; v++ {
 		var list []bool
@@ -78,15 +105,25 @@ func WatchArea(g *image.Gray, width int, height int, p image.Point) bool {
 
 func DrawBound(img *image.RGBA, rect image.Rectangle) *image.RGBA {
 
+	//間違っている部分を囲う枠線の色
 	red := color.RGBA{255, 0, 0, 0}
 	//rectの範囲に枠線を書く
+	// 上下の枠
+	for h := 0; h < rect.Max.X; h++ {
+		img.Set(h, 0, red)
+		img.Set(h, rect.Max.Y-1, red)
+	}
+	// 左右の枠
+	for v := 0; v < rect.Max.Y; v++ {
+		img.Set(0, v, red)
+		img.Set(rect.Max.X-1, v, red)
+	}
 	return img
+
 }
 
 // 枠線を描く
-func drawBounds(img *image.RGBA, col color.Color, rect image.Rectangle) {
-	// 矩形を取得
-	//rect := img.Rect
+func drawBounds(img *image.RGBA, col color.Color, rect image.Rectangle) *image.RGBA {
 
 	for h := 0; h < rect.Max.X; h++ {
 		img.Set(h, 0, col)
@@ -96,6 +133,7 @@ func drawBounds(img *image.RGBA, col color.Color, rect image.Rectangle) {
 		img.Set(0, v, col)
 		img.Set(rect.Max.X-1, v, col)
 	}
+	return img
 }
 
 func main() {
@@ -133,8 +171,22 @@ func main() {
 	}
 
 	_ = GenerateFileter(diffImage)
+
+	//出力用のイメージを用意
+	outRect := image.Rectangle{image.Pt(0, 0), imageA.Bounds().Size()}
+	out := image.NewRGBA(outRect)
+
+	//元画像に対して作成したフィルターを上書き
+	RectA := image.Rectangle{image.Pt(0, 0), imageA.Bounds().Size()}
+	draw.Draw(out, RectA, imageA, image.Pt(0, 0), draw.Src)
+
+	//フィルターを元画像に対して上書きする
+	RectB := image.Rectangle{image.Pt(0, 0), imageB.Bounds().Size()}
+	draw.Draw(out, RectB, imageB, image.Pt(0, 0), draw.Over)
+
 	outfile, _ := os.Create(OUT_PATH)
 	defer outfile.Close()
-	png.Encode(outfile, diffImage)
+	//png.Encode(outfile, diffImage)
+	png.Encode(outfile, out)
 
 }
