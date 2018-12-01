@@ -1,7 +1,6 @@
 package lib
 
 import (
-	"fmt"
 	"image"
 	"image/color"
 	"os"
@@ -84,13 +83,10 @@ func OverlaidFilter(srcImg image.Image, lists [][]bool) *image.NRGBA {
 	rec := srcImg.Bounds()
 	width := rec.Max.X
 	height := rec.Max.Y
-	fmt.Println("Min X is ", rec.Min.X, "  Max X is ", rec.Max.X)
-	fmt.Println("Min Y is ", rec.Min.Y, "  Max Y is ", rec.Max.Y)
 
 	//各ボックスの辺の長さをDIVISIONから求める
 	box_width := width / DIVISION
 	box_height := height / DIVISION
-	fmt.Println("box_width is:", box_width, "height is :", box_height)
 
 	img := image.NewNRGBA(image.Rect(0, 0, width, height))
 

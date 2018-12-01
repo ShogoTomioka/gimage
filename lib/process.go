@@ -1,10 +1,4 @@
-
 package lib
-
-/*
-　画像データを二値化する、もしくは二値化したデータに対する処理をまとめる
-　二値化する際は、Grayスケールの値が128より大きいものを255(白)、128以下を0(黒)にしている
-*/
 
 import (
 	"image"
@@ -25,41 +19,6 @@ func WatchArea(g *image.Gray, width int, height int, p image.Point) bool {
 			if g.GrayAt(x+h, y+v) == gray {
 				count++
 			}
-
-// 二値化した画像のデータを返す関数
-func Binarization(imgObject image.Image) *image.Gray {
-
-	rec := imgObject.Bounds()
-	binary := image.NewGray(rec)
-
-	// グレーイメージに対して二値化処理
-	for v := rec.Min.Y; v < rec.Max.Y; v++ {
-		for h := rec.Min.X; h < rec.Max.X; h++ {
-			c := color.GrayModel.Convert(imgObject.At(h, v))
-			gray, _ := c.(color.Gray)
-			// しきい値(128)で二値化
-			if gray.Y > 128 {
-				gray.Y = 255
-			} else {
-				gray.Y = 0
-			}
-			binary.Set(h, v, gray)
-		}
-	}
-	return binary
-}
-
-func NoBinarization(imgObject image.Image) *image.Gray {
-
-	rec := imgObject.Bounds()
-	binary := image.NewGray(rec)
-
-	// グレー化したものSetして返却
-	for v := rec.Min.Y; v < rec.Max.Y; v++ {
-		for h := rec.Min.X; h < rec.Max.X; h++ {
-			c := color.GrayModel.Convert(imgObject.At(h, v))
-			gray, _ := c.(color.Gray)
-			binary.Set(h, v, gray)
 		}
 	}
 	if count > (width*height)/THREAHOLD {
