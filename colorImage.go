@@ -6,11 +6,7 @@ import (
 	"os"
 )
 
-type ColorImage struct {
-	Image image.Image
-}
-
-func (c ColorImage) NewColorImage(filename string) *ColorImage {
+func NewColorImage(filename string) image.Image {
 
 	//画像ファイルのオープン
 	file, _ := os.Open(filename)
@@ -21,9 +17,7 @@ func (c ColorImage) NewColorImage(filename string) *ColorImage {
 	if err != nil {
 		panic(err)
 	}
-	color := &ColorImage{}
-	color.Image = imageObj
-	return color
+	return imageObj
 }
 
 //元画像をimgに描写して返却する。

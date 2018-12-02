@@ -92,6 +92,7 @@ func DilationImage(g *image.Gray) *image.Gray {
 	return ResultBinary
 }
 
+//二つのグレー画像から差分をとった二値画像を作成する
 func GrayDiff(g1 *image.Gray, g2 *image.Gray) *image.Gray {
 
 	diffBinary := image.NewGray(g1.Rect)
