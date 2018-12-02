@@ -5,50 +5,44 @@ import (
 	"image/color"
 )
 
-//WatchArea は、指定された範囲内の明るさが大きければTrueを、そうでなければFalseを返す
-func WatchArea(g *image.Gray, width int, height int, p image.Point) bool {
+//画像データを二値化して返却する
+func Binarization(imgObject image.Image) *image.Gray {
 
-	x := p.X
-	y := p.Y
+	rec := imgObject.Bounds()
+	binary := image.NewGray(rec)
 
-	var count = 0
-	gray := color.Gray{Y: 255}
-
-	for v := 0; v < width; v++ {
-		for h := 0; h < height; h++ {
-			if g.GrayAt(x+h, y+v) == gray {
-				count++
+	// グレーイメージに対して二値化処理
+	for v := rec.Min.Y; v < rec.Max.Y; v++ {
+		for h := rec.Min.X; h < rec.Max.X; h++ {
+			c := color.GrayModel.Convert(imgObject.At(h, v))
+			gray, _ := c.(color.Gray)
+			// しきい値(128)で二値化
+			if gray.Y > 128 {
+				gray.Y = 255
+			} else {
+				gray.Y = 0
 			}
+			binary.Set(h, v, gray)
 		}
 	}
-	if count > (width*height)/THREAHOLD {
-		return true
-	} else {
-		return false
-	}
+	return binary
 }
 
-//精査された二値データから明るいか(True)、暗いか(True)の情報が入った配列を作成
-func ScanImage(g *image.Gray) [][]bool {
-	var lists [][]bool
-	var t bool
-	var point image.Point
+//画像イメージをグレー化して返却
+func Graying(imgObject image.Image) *image.Gray {
 
-	// 全体を100分割する
-	size := g.Rect.Size()
-	width := size.X / DIVISION
-	height := size.Y / DIVISION
+	rec := imgObject.Bounds()
+	binary := image.NewGray(rec)
 
-	for v := 0; v < DIVISION; v++ {
-		var list []bool
-		for h := 0; h < DIVISION; h++ {
-			point = image.Point{X: width * h, Y: height * v}
-			t = WatchArea(g, width, height, point)
-			list = append(list, t)
+	// グレー化したものSetして返却
+	for v := rec.Min.Y; v < rec.Max.Y; v++ {
+		for h := rec.Min.X; h < rec.Max.X; h++ {
+			c := color.GrayModel.Convert(imgObject.At(h, v))
+			gray, _ := c.(color.Gray)
+			binary.Set(h, v, gray)
 		}
-		lists = append(lists, list)
 	}
-	return lists
+	return binary
 }
 
 //Erosion(縮小)処理をするための関数
