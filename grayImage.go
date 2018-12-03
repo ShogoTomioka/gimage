@@ -34,6 +34,12 @@ func (g *Gray) Graying(imgObjectA image.Image, imgObjectB image.Image) {
 	}
 }
 
+//Convert は指定した回数分ErotionとDilationを行う
+func (g *Gray) Convert(times int) {
+	g.ErosionImage(times)
+	g.DilationImage(times)
+}
+
 //ErosionImage は縮小処理(Erossion)をするための関数
 func (g *Gray) ErosionImage(times int) {
 

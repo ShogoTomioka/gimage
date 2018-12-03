@@ -6,10 +6,11 @@ import (
 	"os"
 )
 
-func NewColorImage(filename string) image.Image {
+//NewColorImage は指定されたパスの画像ファイルを開いて、画像イメージを返却する
+func NewColorImage(path string) (image.Image, error) {
 
 	//画像ファイルのオープン
-	file, _ := os.Open(filename)
+	file, _ := os.Open(path)
 	defer file.Close()
 
 	//ファイルをデコードしてImageオブジェクトを作成
@@ -17,7 +18,7 @@ func NewColorImage(filename string) image.Image {
 	if err != nil {
 		panic(err)
 	}
-	return imageObj
+	return imageObj, err
 }
 
 //元画像をimgに描写して返却する。
@@ -33,25 +34,6 @@ func fillColor(img *image.NRGBA, srcImg image.Image, width int, height int) *ima
 				A: 255,
 			})
 		}
-	}
-	return img
-}
-
-//DrawBound は指定されたRectangleの範囲に赤い枠線を描く
-func DrawBound(img *image.RGBA, rect image.Rectangle) *image.RGBA {
-	//間違っている部分を囲う枠線の色
-	red := color.RGBA{255, 0, 0, 0}
-	//rectの範囲に枠線を書く
-	// 上下の枠
-	for h := rect.Min.X; h < rect.Max.X; h++ {
-		img.Set(h, rect.Min.Y, red)
-		img.Set(h, rect.Max.Y-1, red)
-	}
-	// 左右の枠
-	for v := rect.Min.Y; v < rect.Max.Y; v++ {
-		img.Set(rect.Min.X, v, red)
-		img.Set(rect.Max.X-1, v, red)
-
 	}
 	return img
 }

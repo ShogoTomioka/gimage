@@ -29,11 +29,13 @@ func (f Filter) WatchArea(g *image.Gray, width int, height int, p image.Point) b
 			}
 		}
 	}
+	var result bool
 	if count > (width*height)/f.Threshold {
-		return true
+		result = true
 	} else {
-		return false
+		result = false
 	}
+	return result
 }
 
 // OverlaidFilter は間違いのあるところを赤っぽくする
@@ -73,7 +75,7 @@ func (f Filter) OverlaidFilter(srcImg image.Image) *image.NRGBA {
 	return img
 }
 
-//精査された二値データから明るいか(True)、暗いか(True)の情報が入った配列を作成
+//ScanImage は精査された二値データから明るいか(True)、暗いか(True)の情報が入った配列を作成
 func (f *Filter) ScanImage(g *image.Gray) {
 	var lists [][]bool
 	var t bool
@@ -94,32 +96,4 @@ func (f *Filter) ScanImage(g *image.Gray) {
 		lists = append(lists, list)
 	}
 	f.Lists = lists
-}
-
-//GenerateFilter は二値画像の明るい部分に枠線を描く
-func (f Filter) GenerateFilter(g *image.Gray) *image.RGBA {
-
-	//間違っている部分を示すためのフィルターImage
-	filter := image.NewRGBA(g.Rect)
-
-	size := g.Rect.Size()
-	width := size.X / f.Division
-	height := size.Y / f.Division
-
-	//フィルターの枠線のRectangleを作成、あとでFor分でこのRectangleをずらしていく
-	min := image.Point{X: 0, Y: 0}
-	point := image.Point{X: width, Y: height}
-	rec := image.Rectangle{Min: min, Max: point}
-
-	for i := 0; i < f.Division; i++ {
-		for t := 0; t < f.Division; t++ {
-			if f.Lists[t][i] == true {
-				p := image.Point{X: width * t, Y: height * i}
-				redRec := rec.Add(p)
-
-				filter = DrawBound(filter, redRec)
-			}
-		}
-	}
-	return filter
 }

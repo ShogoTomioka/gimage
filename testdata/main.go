@@ -10,15 +10,17 @@ import (
 func main() {
 
 	const (
-		FILE_PATH_A = "./pictures/picture_A.png"
-		FILE_PATH_B = "./pictures/picture_B.png"
+		// 比較する二つの画像へのパス
+		FilePathA = "./pictures/picture_A.png"
+		FilePathB = "./pictures/picture_B.png"
 	)
-
+	// Thresholdは、フィルターをかける時の閾値、大きいと小さい差分でも検出し、小さいと大きいものしか検出しない
+	// Divisionは画像を分割する単位、大きいと粗く、小さいと細かく処理を行う
 	filter := &gimage.Filter{Threshold: 10, Division: 20}
 
 	//比較する画像データを読み込む
-	imageA := gimage.NewColorImage(FILE_PATH_A)
-	imageB := gimage.NewColorImage(FILE_PATH_B)
+	imageA, _ := gimage.NewColorImage(FilePathA)
+	imageB, _ := gimage.NewColorImage(FilePathB)
 
 	gray := &gimage.Gray{}
 	//二つの比較する画像をそれぞれグレースケール化する
@@ -28,14 +30,8 @@ func main() {
 	gray.GrayDiff()
 
 	//DilationとErotionを"3回"繰り返し、画像を鳴らす
-	gray.ErosionImage(3)
-	gray.DilationImage(3)
-	fi, _ := os.Create("test.png")
-	defer fi.Close()
+	gray.Convert(3)
 
-	if err := png.Encode(fi, gray.Image); err != nil {
-		panic(err)
-	}
 	//二値画像から明るい部分がTrue、暗い部分がFalseになった二次元配列を獲得
 	filter.ScanImage(gray.Image)
 
