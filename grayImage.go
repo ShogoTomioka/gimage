@@ -5,105 +5,101 @@ import (
 	"image/color"
 )
 
-//画像データを二値化して返却する
-func Binarization(imgObject image.Image) *image.Gray {
-
-	rec := imgObject.Bounds()
-	binary := image.NewGray(rec)
-
-	// グレーイメージに対して二値化処理
-	for v := rec.Min.Y; v < rec.Max.Y; v++ {
-		for h := rec.Min.X; h < rec.Max.X; h++ {
-			c := color.GrayModel.Convert(imgObject.At(h, v))
-			gray, _ := c.(color.Gray)
-			// しきい値(128)で二値化
-			if gray.Y > 128 {
-				gray.Y = 255
-			} else {
-				gray.Y = 0
-			}
-			binary.Set(h, v, gray)
-		}
-	}
-	return binary
+//Gray は二値に関するメソッドを持った構造体
+type Gray struct {
+	ImageA *image.Gray
+	ImageB *image.Gray
+	Image  *image.Gray
+	Rec    image.Rectangle
 }
 
-//画像イメージをグレー化して返却
-func Graying(imgObject image.Image) *image.Gray {
+//Graying は画像イメージをグレー化して返却
+func (g *Gray) Graying(imgObjectA image.Image, imgObjectB image.Image) {
 
-	rec := imgObject.Bounds()
-	binary := image.NewGray(rec)
+	g.Rec = imgObjectA.Bounds()
+	g.ImageA = image.NewGray(g.Rec)
+	g.ImageB = image.NewGray(g.Rec)
 
 	// グレー化したものSetして返却
-	for v := rec.Min.Y; v < rec.Max.Y; v++ {
-		for h := rec.Min.X; h < rec.Max.X; h++ {
-			c := color.GrayModel.Convert(imgObject.At(h, v))
-			gray, _ := c.(color.Gray)
-			binary.Set(h, v, gray)
+	for v := g.Rec.Min.Y; v < g.Rec.Max.Y; v++ {
+		for h := g.Rec.Min.X; h < g.Rec.Max.X; h++ {
+			ca := color.GrayModel.Convert(imgObjectA.At(h, v))
+			cb := color.GrayModel.Convert(imgObjectB.At(h, v))
+			grayA, _ := ca.(color.Gray)
+			grayB, _ := cb.(color.Gray)
+			g.ImageA.Set(h, v, grayA)
+			g.ImageB.Set(h, v, grayB)
+
 		}
 	}
-	return binary
 }
 
-//Erosion(縮小)処理をするための関数
-func ErosionImage(g *image.Gray) *image.Gray {
-	ResultBinary := image.NewGray(g.Rect)
-	gray := color.Gray{Y: 255}
+//ErosionImage は縮小処理(Erossion)をするための関数
+func (g *Gray) ErosionImage(times int) {
 
-	for v := g.Rect.Min.Y; v < g.Rect.Max.Y; v++ {
-		for h := g.Rect.Min.X; h < g.Rect.Max.X; h++ {
-			g1 := g.GrayAt(h-1, v).Y == 255
-			g2 := g.GrayAt(h+1, v).Y == 255
-			g3 := g.GrayAt(h, v-1).Y == 255
-			g4 := g.GrayAt(h, v+1).Y == 255
-			g5 := g.GrayAt(h-1, v-1).Y == 255
-			g6 := g.GrayAt(h-1, v+1).Y == 255
-			g7 := g.GrayAt(h+1, v-1).Y == 255
-			g8 := g.GrayAt(h+1, v+1).Y == 255
+	for i := 0; i < times; i++ {
+		resImage := image.NewGray(g.Rec)
+		gray := color.Gray{Y: 255}
+		for v := g.Rec.Min.Y; v < g.Rec.Max.Y; v++ {
+			for h := g.Rec.Min.X; h < g.Rec.Max.X; h++ {
+				g1 := g.Image.GrayAt(h-1, v).Y == 255
+				g2 := g.Image.GrayAt(h+1, v).Y == 255
+				g3 := g.Image.GrayAt(h, v-1).Y == 255
+				g4 := g.Image.GrayAt(h, v+1).Y == 255
+				g5 := g.Image.GrayAt(h-1, v-1).Y == 255
+				g6 := g.Image.GrayAt(h-1, v+1).Y == 255
+				g7 := g.Image.GrayAt(h+1, v-1).Y == 255
+				g8 := g.Image.GrayAt(h+1, v+1).Y == 255
 
-			if g1 && g2 && g3 && g4 && g5 && g6 && g7 && g8 {
-				ResultBinary.SetGray(h, v, gray)
+				//周りのピクセルが全部白の場合のみ明るくする
+				if g1 && g2 && g3 && g4 && g5 && g6 && g7 && g8 {
+					resImage.SetGray(h, v, gray)
+				}
 			}
 		}
+		g.Image = resImage
 	}
-	return ResultBinary
+
 }
 
-//Dilation(拡張)処理をするための関数
-func DilationImage(g *image.Gray) *image.Gray {
-	ResultBinary := image.NewGray(g.Rect)
-	gray := color.Gray{Y: 255}
+//DilationImage は拡張処理(Dilation)をするための関数
+func (g *Gray) DilationImage(times int) {
 
-	for v := g.Rect.Min.Y; v < g.Rect.Max.Y; v++ {
-		for h := g.Rect.Min.X; h < g.Rect.Max.X; h++ {
-			if g.GrayAt(h, v).Y == 255 {
-				ResultBinary.SetGray(h-1, v, gray)
-				ResultBinary.SetGray(h+1, v, gray)
-				ResultBinary.SetGray(h, v-1, gray)
-				ResultBinary.SetGray(h, v+1, gray)
-				ResultBinary.SetGray(h-1, v-1, gray)
-				ResultBinary.SetGray(h-1, v+1, gray)
-				ResultBinary.SetGray(h+1, v-1, gray)
-				ResultBinary.SetGray(h+1, v+1, gray)
+	gray := color.Gray{Y: 255}
+	for i := 0; i < times; i++ {
+		resImage := image.NewGray(g.Rec)
+		for v := g.Rec.Min.Y; v < g.Rec.Max.Y; v++ {
+			for h := g.Rec.Min.X; h < g.Rec.Max.X; h++ {
+				//その点が白なら周りも全部白にする
+				if g.Image.GrayAt(h, v).Y == 255 {
+					resImage.SetGray(h, v, gray)
+					resImage.SetGray(h-1, v, gray)
+					resImage.SetGray(h+1, v, gray)
+					resImage.SetGray(h, v-1, gray)
+					resImage.SetGray(h, v+1, gray)
+					resImage.SetGray(h-1, v-1, gray)
+					resImage.SetGray(h-1, v+1, gray)
+					resImage.SetGray(h+1, v-1, gray)
+					resImage.SetGray(h+1, v+1, gray)
+				}
 			}
-
 		}
+		g.Image = resImage
 	}
-	return ResultBinary
 }
 
-//二つのグレー画像から差分をとった二値画像を作成する
-func GrayDiff(g1 *image.Gray, g2 *image.Gray) *image.Gray {
+//GrayDiff は二つのグレー画像から差分をとった二値画像を作成する
+func (g *Gray) GrayDiff() {
 
-	diffBinary := image.NewGray(g1.Rect)
+	diffBinary := image.NewGray(g.Rec)
 	gray := color.Gray{Y: 255}
 
-	for v := g1.Rect.Min.Y; v < g1.Rect.Max.Y; v++ {
-		for h := g1.Rect.Min.X; h < g1.Rect.Max.X; h++ {
-			if g1.GrayAt(h, v) != g2.GrayAt(h, v) {
+	for v := g.Rec.Min.Y; v < g.Rec.Max.Y; v++ {
+		for h := g.Rec.Min.X; h < g.Rec.Max.X; h++ {
+			if g.ImageA.GrayAt(h, v) != g.ImageB.GrayAt(h, v) {
 				diffBinary.SetGray(h, v, gray)
 			}
 		}
 	}
-	return diffBinary
+	g.Image = diffBinary
 }
