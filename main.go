@@ -1,46 +1,66 @@
 package main
 
 import (
+	"flag"
 	"image/png"
 	"os"
 
-	"github.com/ShogoTomioka/gimage"
+	gimage "github.com/ShogoTomioka/gimage/lib"
 )
 
 func main() {
 
 	const (
-		// 比較する二つの画像へのパス
-		FilePathA = "./pictures/picture_A.png"
-		FilePathB = "./pictures/picture_B.png"
+		FilePathA1 = "./testdata/picture_A.png"
+		FilePathA2 = "./testdata/picture_B.png"
+		FilePathB1 = "./testdata/picture_C.png"
+		FilePathB2 = "./testdata/picture_D.png"
 	)
-	// Thresholdは、フィルターをかける時の閾値、大きいと小さい差分でも検出し、小さいと大きいものしか検出しない
-	// Divisionは画像を分割する単位、大きいと粗く、小さいと細かく処理を行う
+
+	var pathA string
+	var pathB string
+	flag.Parse()
+	arg := flag.Args()[0]
+
+	switch arg {
+	case "A":
+		pathA = FilePathA1
+		pathB = FilePathA2
+	case "B":
+		pathA = FilePathB1
+		pathB = FilePathB2
+	}
+
 	filter := &gimage.Filter{Threshold: 10, Division: 20}
 
-	//比較する画像データを読み込む
-	imageA, _ := gimage.NewColorImage(FilePathA)
-	imageB, _ := gimage.NewColorImage(FilePathB)
+	imageA, _ := gimage.NewColorImage(pathA)
+	imageB, _ := gimage.NewColorImage(pathB)
 
 	gray := &gimage.Gray{}
-	//二つの比較する画像をそれぞれグレースケール化する
+
 	gray.Graying(imageA, imageB)
 
-	//グレー化した画像を比較し、二値画像を作成する
 	gray.GrayDiff()
 
-	//DilationとErotionを"3回"繰り返し、画像を鳴らす
+	//DilationとErotionを"3回"繰り返し
 	gray.Convert(3)
 
-	//二値画像から明るい部分がTrue、暗い部分がFalseになった二次元配列を獲得
 	filter.ScanImage(gray.Image)
 
+	//元の画像に間違い部分をフィルターする
 	filteredImg := filter.OverlaidFilter(imageA)
 
-	filterFile, _ := os.Create("filtered.png")
+	filterFile, _ := os.Create("./testdata/filtered.png")
 	defer filterFile.Close()
 
 	if err := png.Encode(filterFile, filteredImg); err != nil {
+		panic(err)
+	}
+
+	binFile, _ := os.Create("./testdata/binary.png")
+	defer binFile.Close()
+
+	if err := png.Encode(binFile, gray.Image); err != nil {
 		panic(err)
 	}
 
