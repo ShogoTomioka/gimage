@@ -4,7 +4,7 @@
 使用した画像は[ちびむすドリル](https://happylilac.net/machigai-h.html)から引用しています
 現在、二種類の間違い画像（A,B)が置いてあります。makeコマンドの"TYPE"で”A”か”B”を指定してね。デフォルトはA
 
-##usage
+## usage
 
 ```make TYPE=A run```
 
