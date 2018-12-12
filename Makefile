@@ -1,29 +1,20 @@
 
 
 
-
-NAME := ganalyze
 VERSION := v0.1
 GOVERSION := go1.11
+NAME := gimage
 
+TYPE := A
+SRCS := $(shell find ./lib -type f -name '*.go')
 
-SRCS    := $(shell find . -type f -name '*.go')
-PKGS := $(shell go list ./...)
-
-.PHONY: init
-init:
-
+.PHONY: run
+run: build
+	./${NAME} ${TYPE}
 
 .PHONY: build
-build: test
-	go build -a -v -o $(NAME) main.go
-
-bin/$(NAME): $(SRCS)
-	go build -a -v -o bin/$(NAME)
-
-.PHONY: test
-test: lint
-	go test $(PKGS)
+build: lint
+	go build -o gimage main.go
 
 .PHONY: lint
 lint:
@@ -31,4 +22,6 @@ lint:
 
 .PHONY: clean
 clean:
-	rm -rf ./bin
+	rm -rf ./testdata/filtered.png
+	rm -rf ./testdata/binary.png
+	rm -r  ./${NAME}
